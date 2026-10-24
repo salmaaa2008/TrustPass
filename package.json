@@ -1,0 +1,17 @@
+{
+  "name": "trustpass",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "setup": "node trustpass.js setup",
+    "issue": "node trustpass.js issue",
+    "verify": "node trustpass.js verify",
+    "revoke": "node trustpass.js revoke",
+    "agent": "node trustpass.js agent",
+    "pay": "node trustpass.js pay"
+  },
+  "dependencies": {
+    "@hashgraph/sdk": "^2.69.0",
+    "dotenv": "^16.4.5"
+  }
+}
