@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TrustPass – prototype</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f3ee;--card:#fff;--ink:#0e1a2b;--mute:#5b6675;--line:#ddd9cf;--acc:#c2410c;--btn:#fff;--ok:#0f7a4d;--warn:#8a5a00;--bad:#b42318;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1a2b;--card:#16273d;--ink:#f5f3ee;--mute:#b8c2d0;--line:#2a3f5c;--acc:#f2793a;--btn:#0e1a2b;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1a2b;--card:#16273d;--ink:#f5f3ee;--mute:#b8c2d0;--line:#2a3f5c;--acc:#f2793a;--btn:#0e1a2b;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:40px;margin:0}h2{font-size:20px;margin:0 0 12px}
+.tag{color:var(--acc);font-weight:700;margin:4px 0 16px}
+.note{font-size:14px;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0}
+label{display:block;font-size:14px;color:var(--mute);margin:8px 0 4px}
+input,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+input[type=checkbox]{width:auto;margin-right:8px}
+textarea{min-height:110px;font:14px ui-monospace,monospace}
+button{margin-top:12px;padding:10px 18px;border:0;border-radius:8px;background:var(--acc);color:var(--btn);font:inherit;font-weight:700;cursor:pointer}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;font-size:13px}
+ul{padding:0;list-style:none}
+li{padding:10px 12px;border-left:4px solid;border-radius:6px;background:var(--bg);margin:8px 0}
+li.ok{border-color:var(--ok)}li.warn{border-color:var(--warn)}li.bad{border-color:var(--bad)}
+table{width:100%;border-collapse:collapse;margin-top:12px}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left}
+a{color:var(--acc)}[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>TrustPass</h1>
+<p class="tag">Proof Over Promise.</p>
+<p class="note"><b>Prototype.</b> This page simulates the whole flow in your browser: the fingerprints are real SHA-256, the Hedera steps are simulated. The real Hedera code is in the repository (<code>npm run setup · issue · verify · agent · pay</code>).</p>
+<div class="card"><label for="topic">Your HCS topic ID (optional, shown after <code>npm run setup</code>)</label><input id="topic" placeholder="0.0.123456"><p class="note"><a id="scan" href="https://hashscan.io/testnet/dashboard" target="_blank" rel="noopener">Open HashScan</a></p></div>
+
+<section class="card"><h2>1 · The university issues a credential</h2>
+<label for="name">Student</label><input id="name" value="Sarra Ben Ali">
+<label for="deg">Degree</label><input id="deg" value="Master in Finance">
+<label for="yr">Year</label><input id="yr" type="number" value="2025">
+<button id="issue">Issue credential</button>
+<pre id="cred" hidden></pre><p class="note" id="hash"></p></section>
+
+<section class="card"><h2>2 · The student shares only what is needed</h2>
+<p class="note">Tick what the recruiter may see. The grade and the ID number never leave the student’s wallet.</p>
+<label><input type="checkbox" id="s1" checked>Degree</label>
+<label><input type="checkbox" id="s2" checked>Institution</label>
+<label><input type="checkbox" id="s3" checked>Year</label>
+<label><input type="checkbox" disabled>Grade (hidden)</label>
+<label><input type="checkbox" disabled>ID number (hidden)</label>
+<p id="seen"><b>Issue a credential first.</b></p></section>
+
+<section class="card"><h2>3 · The recruiter’s AI agent checks a CV</h2>
+<textarea id="cv">Sarra Ben Ali, finance graduate
+DEGREE | Master in Finance | IHEC Sousse | 2025
+DEGREE | MBA | HEC Paris | 2024
+DEGREE | PhD in Finance | IHEC Sousse | 2025</textarea>
+<button id="verify">Verify this CV</button>
+<div id="out"></div></section>
+
+<section class="card"><h2>4 · One payment, split between three parties</h2>
+<p class="note">The recruiter’s agent pays per verification.</p>
+<button id="pay">Pay 0.10 HBAR</button>
+<table id="split" hidden><tr><th>Who</th><th>Share</th><th>HBAR</th></tr><tr><td>Student</td><td>50%</td><td>0.05</td></tr><tr><td>IHEC Sousse (issuer)</td><td>30%</td><td>0.03</td></tr><tr><td>TrustPass (platform)</td><td>20%</td><td>0.02</td></tr></table>
+<p class="note" id="paid" hidden>Simulated here. <code>npm run pay</code> does it for real on testnet, in a single transaction.</p></section>
+</main>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let cred=null;
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+const sha=async t=>hex(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)));
+function seen(){
+  if(!cred)return;
+  const p=[];
+  if($("#s1").checked)p.push(cred.claims.degree);
+  if($("#s2").checked)p.push(cred.issuer);
+  if($("#s3").checked)p.push(cred.claims.year);
+  $("#seen").innerHTML="<b>The recruiter sees:</b> "+(esc(p.join(", "))||"nothing")+".";
+}
+["#s1","#s2","#s3"].forEach(s=>$(s).onchange=seen);
+$("#topic").oninput=e=>{
+  const v=e.target.value.trim();
+  $("#scan").href=/^0\.0\.\d+$/.test(v)?"https://hashscan.io/testnet/topic/"+v:"https://hashscan.io/testnet/dashboard";
+};
+$("#issue").onclick=async()=>{
+  cred={holder:$("#name").value.trim(),issuer:"IHEC Sousse",claims:{degree:$("#deg").value.trim(),year:+$("#yr").value},salt:hex(crypto.getRandomValues(new Uint8Array(16))),issuedAt:new Date().toISOString()};
+  const h=await sha(JSON.stringify(cred));
+  $("#cred").hidden=false;
+  $("#cred").textContent=JSON.stringify(cred,null,2);
+  $("#hash").innerHTML="Only this fingerprint would go on Hedera: <code>"+h.slice(0,24)+"…</code>";
+  seen();
+};
+$("#verify").onclick=()=>{
+  if(!cred){$("#out").innerHTML="<p class=\"note\">Issue a credential first (step 1).</p>";return}
+  const lines=$("#cv").value.split("\n").filter(l=>l.startsWith("DEGREE |"));
+  let ok=0;
+  const rows=lines.map(l=>{
+    const[,d,i,y]=l.split("|").map(s=>s.trim());
+    const sameIssuer=i.toLowerCase()===cred.issuer.toLowerCase();
+    const match=sameIssuer&&d.toLowerCase()===cred.claims.degree.toLowerCase()&&+y===cred.claims.year;
+    let c,t;
+    if(match){ok++;c="ok";t="✅ Verified on Hedera"}
+    else if(sameIssuer){c="bad";t="❌ Red flag: IHEC Sousse is on TrustPass but never issued this"}
+    else{c="warn";t="⚠️ Unverified: this issuer is not on TrustPass yet"}
+    return "<li class=\""+c+"\"><b>"+t+"</b><br>"+esc(d)+", "+esc(i)+", "+esc(y)+"</li>";
+  });
+  $("#out").innerHTML="<ul>"+rows.join("")+"</ul><p><b>Trust score: "+ok+"/"+lines.length+" claims proven.</b> The AI reads the CV, the cryptography decides.</p>";
+};
+$("#pay").onclick=()=>{$("#split").hidden=false;$("#paid").hidden=false};
+</script>
+</body>
+</html>
