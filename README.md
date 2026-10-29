@@ -15,6 +15,7 @@ A university anchors the fingerprint (SHA-256 hash) of each credential on the He
 Roadmap: did:hedera identities, HTS badges, selective disclosure, x402 payments.
 
 ## Run it
+Live demo: https://salmaaa2008.github.io/TrustPass/
 
 1. Install Node.js 20+ and create a free testnet account at portal.hedera.com.
 2. Create a file named `.env` containing:
