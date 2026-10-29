@@ -32,9 +32,8 @@ a{color:var(--acc)}[hidden]{display:none!important}
 <body>
 <main>
 <h1>TrustPass</h1>
-<p class="tag">Proof Over Promise.</p>
+<p class="tag">Don’t trust the CV. Verify it.</p>
 <p class="note"><b>Prototype.</b> This page simulates the whole flow in your browser: the fingerprints are real SHA-256, the Hedera steps are simulated. The real Hedera code is in the repository (<code>npm run setup · issue · verify · agent · pay</code>).</p>
-<div class="card"><label for="topic">Your HCS topic ID (optional, shown after <code>npm run setup</code>)</label><input id="topic" placeholder="0.0.123456"><p class="note"><a id="scan" href="https://hashscan.io/testnet/dashboard" target="_blank" rel="noopener">Open HashScan</a></p></div>
 
 <section class="card"><h2>1 · The university issues a credential</h2>
 <label for="name">Student</label><input id="name" value="Sarra Ben Ali">
@@ -80,10 +79,6 @@ function seen(){
   $("#seen").innerHTML="<b>The recruiter sees:</b> "+(esc(p.join(", "))||"nothing")+".";
 }
 ["#s1","#s2","#s3"].forEach(s=>$(s).onchange=seen);
-$("#topic").oninput=e=>{
-  const v=e.target.value.trim();
-  $("#scan").href=/^0\.0\.\d+$/.test(v)?"https://hashscan.io/testnet/topic/"+v:"https://hashscan.io/testnet/dashboard";
-};
 $("#issue").onclick=async()=>{
   cred={holder:$("#name").value.trim(),issuer:"IHEC Sousse",claims:{degree:$("#deg").value.trim(),year:+$("#yr").value},salt:hex(crypto.getRandomValues(new Uint8Array(16))),issuedAt:new Date().toISOString()};
   const h=await sha(JSON.stringify(cred));
